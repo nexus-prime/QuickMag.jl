@@ -1,0 +1,1 @@
+# QuickMag.jl
