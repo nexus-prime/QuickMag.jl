@@ -21,7 +21,7 @@ The code here will eventually replace the backend code for http://quickmag.ml/
     Run Start_Bash.sh from the terminal to start QuickMag.jl
 or
 
-    Directly run ./QuickMag.jl (will default to single threaded mode)
+    Directly run ./Run_QuickMag.jl (will default to single threaded mode)
 
 **Using QuickMag**
 
