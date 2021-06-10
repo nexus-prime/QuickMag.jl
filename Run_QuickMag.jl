@@ -17,13 +17,13 @@ ExistingDatabase=isfile(joinpath(".","HostFiles","WhiteList.jldb"));
 if ExistingDatabase
 	CurrentTime=Dates.now()
 	WhiteListTable=WhiteListTable=load(joinpath(".","HostFiles","WhiteList.jldb"));
-	UpdateTime=WhiteListTable[1].TimeStamp		#Forcing Update for debug
-	DayFrac=round(Millisecond(CurrentTime-UpdateTime)/Millisecond(Day(1)),digits=2);
+	UpdateTime=WhiteListTable[1].TimeStamp		
+	DayFrac=round(Millisecond(CurrentTime-UpdateTime)/Millisecond(Day(1)),digits=2); #Get number of days since last update
 	if DayFrac<1.0
-		printstyled("Database has recently been updated\n")
+		printstyled("Database has recently been updated\n")			#Skip option to update if less than 24 hours
 		println()
 	else
-		printstyled("Database last updated $DayFrac days ago\n")
+		printstyled("Database last updated $DayFrac days ago\n")		#Offer update if >24 hours and databases exist
 		options = ["Yes", "No"]
 		menu = RadioMenu(options, pagesize=2)
 		choice = request("Would you like to get fresh data?", menu)
@@ -39,7 +39,7 @@ if ExistingDatabase
 		
 	end
 	
-else
+else											#Force update if there is no database files
 	printstyled("No database found. Building new database of BOINC hosts:\n",bold=:true)
 	include(joinpath(".","src","updateDatabase.jl"))
 	println()
