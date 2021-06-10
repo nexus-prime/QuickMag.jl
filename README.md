@@ -9,7 +9,7 @@ The code here will eventually replace the backend code for http://quickmag.ml/
 
     *Julia (version 1.5 or later): https://julialang.org/downloads/ 
     *5GB RAM
-    *600MB disk space
+    *600MB disk space ( ~25 MB for the database and ~550MB for Julia + dependancies)
 
 
 **Steps for starting QuickMag: Windows**
