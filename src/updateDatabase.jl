@@ -124,19 +124,23 @@ WLlength=size(select(WhiteListTable,1),1);
 
 #Remove old host data
 FullHostFilePath=joinpath(pwd(),"HostFiles");
-if Sys.iswindows()
-	run(`cmd /C rmdir /Q /S $FullHostFilePath`)	#Windows File Permisions issue (workaround)
-else
-	rm("HostFiles"; force=true, recursive=true);
+if isdir(FullHostFilePath)
+	if Sys.iswindows()
+		run(`cmd /C rmdir /Q /S $FullHostFilePath`)	#Windows File Permisions issue (workaround)
+	else
+		rm("HostFiles"; force=true, recursive=true);
+	end
 end
 mkdir("HostFiles")							#Make new folder to store host data
-TempPath=joinpath(tempdir(),"QM_Temp")		#Save path to working temp directory 
 
 #Clean up any leftover data in temp directory
-if Sys.iswindows()
-	run(`cmd /C rmdir /Q /S $TempPath`)			#Windows File Permisions issue (workaround)
-else
-	rm(TempPath; force=true, recursive=true);
+TempPath=joinpath(tempdir(),"QM_Temp")		#Save path to working temp directory 
+if isdir(TempPath)
+	if Sys.iswindows()
+		run(`cmd /C rmdir /Q /S $TempPath`)			#Windows File Permisions issue (workaround)
+	else
+		rm(TempPath; force=true, recursive=true);
+	end
 end
 mkdir(TempPath)
 
