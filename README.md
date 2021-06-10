@@ -1,5 +1,5 @@
 # QuickMag.jl
-This is a Julia implementation of QuickMag. QuickMag is a method for determining the approximate performance of a given CPU/GPU on all Gridcoin whitelisted projects. The move to Julia allows for more efficient data processing and easier parallelization of the code. Additionally, the process of adding or removing projects from the Gridcoin whitelist has been streamlined and now just requires adding/removing lines from the WhiteList.csv file.
+This is a Julia implementation of QuickMag. QuickMag is a method for determining the approximate magnitude (GRC/Day*4) of a given CPU/GPU on all Gridcoin whitelisted projects. The move to Julia allows for more efficient data processing and easier parallelization of the code. Additionally, the process of adding or removing projects from the Gridcoin whitelist has been streamlined and now just requires adding/removing lines from the WhiteList.csv file.
 
 The program will open a Julia terminal, download additional dependencies, and then start building the required hardware databases from publicly available BOINC project data. Once the database has been built, you can follow the instructions on screen to estimate the performance of a CPU, estimate the performance of a GPU, or print surveys of what CPU/GPU models are most commonly being used. 
 
