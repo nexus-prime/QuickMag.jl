@@ -197,10 +197,12 @@ Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in 
 			LocTemp=joinpath(tempdir(),"QM_Temp","$(row.Type)"*"_"*"$(row.Project).xml") #Path to temp XML file
 			
 			try
+				#Switching from LocFileStream/PareDownIO to run(wget | catz | grep -E) would reduce RAM usage. (Linux only)
 				LocFileStream = GzipDecompressorStream( IOBuffer(HTTP.get(row.URL).body)) #Download & Decompress xml
 				PareDownIO( LocFileStream,LocTemp)		#Remove most unnecessary elements from XML to save RAM
 				
-				MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to data matrix stored in CSV
+				
+				MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
 
 				#Remove temp XML file
 				if Sys.iswindows()
