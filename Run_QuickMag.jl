@@ -17,7 +17,7 @@ ExistingDatabase=isfile(joinpath(".","HostFiles","WhiteList.jldb"));
 if ExistingDatabase
 	CurrentTime=Dates.now()
 	WhiteListTable=WhiteListTable=load(joinpath(".","HostFiles","WhiteList.jldb"));
-	UpdateTime=WhiteListTable[1].TimeStamp-Day(2)		#Forcing Update for debug
+	UpdateTime=WhiteListTable[1].TimeStamp		#Forcing Update for debug
 	DayFrac=round(Millisecond(CurrentTime-UpdateTime)/Millisecond(Day(1)),digits=2);
 	if DayFrac<1.0
 		printstyled("Database has recently been updated\n")
