@@ -123,7 +123,6 @@ UseLowMemoryMode = false
 if Sys.islinux() && FracOfAvailMemory<1
 	println("Low system RAM detected:\n     Switching to low memory mode")
 	UseLowMemoryMode=true
-	println("")
 end
 
 WhiteListFile=joinpath(".","WhiteList.csv");# Import Gridcoin WhiteList from CSV file
@@ -201,41 +200,71 @@ println("Downloading Host Data")
 
 FailedDownloads=[];
 
-Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads) 
-		row=WhiteListTable[ind];
-		if (row.TeamRAC!=Inf)	
-			println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
-			
-			LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb") #Path to saved data
-			LocTemp=joinpath(tempdir(),"QM_Temp","$(row.Type)"*"_"*"$(row.Project).xml") #Path to temp XML file
-			
-			try
-				#Switching from LocFileStream/PareDownIO to run(bash -c "wget | catz | grep -E") can greatly reduce RAM usage (Linux only)
-				if UseLowMemoryMode	
+
+if UseLowMemoryMode	
+	for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads) 
+			row=WhiteListTable[ind];
+			if (row.TeamRAC!=Inf)	
+				println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
+				
+				LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb") #Path to saved data
+				LocTemp=joinpath(tempdir(),"QM_Temp","$(row.Type)"*"_"*"$(row.Project).xml") #Path to temp XML file
+				
+				try
+					#Switching from LocFileStream/PareDownIO to run(bash -c "wget | catz | grep -E") can greatly reduce RAM usage (Linux only)
 					locURL=row.URL
-					run(`bash -c "bash ./src/lowMemDownload.sh $locURL $LocTemp"`)
-				else
+					run(`bash -c "./src/lowMemDownload.sh $locURL $LocTemp"`)
+
+					
+					MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
+
+					#Remove temp XML file
+					if Sys.iswindows()
+						#run(`cmd /C del $LocTemp`) #Windows File Permisions issue
+					else
+						rm(LocTemp);
+					end				
+
+					println("    Finished downloading project: $(row.Project)")
+				catch e					#catch errors that occur if a project website is down
+					println("Error: Unable to download data for $(row.Project)")
+					push!(FailedDownloads,ind)
+				end
+			end
+	end 
+else
+	Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads) 
+			row=WhiteListTable[ind];
+			if (row.TeamRAC!=Inf)	
+				println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
+				
+				LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb") #Path to saved data
+				LocTemp=joinpath(tempdir(),"QM_Temp","$(row.Type)"*"_"*"$(row.Project).xml") #Path to temp XML file
+				
+				try
+					#Downloading using Julia tools results in higher download speeds
 					LocFileStream = GzipDecompressorStream( IOBuffer(HTTP.get(row.URL).body)) #Download & Decompress xml
 					PareDownIO( LocFileStream,LocTemp)	#Remove most unnecessary elements from XML to save RAM
+
+					
+					MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
+
+					#Remove temp XML file
+					if Sys.iswindows()
+						#run(`cmd /C del $LocTemp`) #Windows File Permisions issue
+					else
+						rm(LocTemp);
+					end				
+
+					println("    Finished downloading project: $(row.Project)")
+				catch e					#catch errors that occur if a project website is down
+					println("Error: Unable to download data for $(row.Project)")
+					push!(FailedDownloads,ind)
 				end
-				
-				MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
-
-				#Remove temp XML file
-				if Sys.iswindows()
-					#run(`cmd /C del $LocTemp`) #Windows File Permisions issue
-				else
-					rm(LocTemp);
-				end				
-
-				println("    Finished downloading project: $(row.Project)")
-			catch e					#catch errors that occur if a project website is down
-				println("Error: Unable to download data for $(row.Project)")
-				push!(FailedDownloads,ind)
 			end
-		end
-	   
-end 
+	end 
+end
+
 
 # Finalize WhiteListTable.jldb noting missing data (Host data & Team data from block explorer)
 TeamRacVect=select(WhiteListTable,:TeamRAC);
