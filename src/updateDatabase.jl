@@ -123,6 +123,7 @@ UseLowMemoryMode = false
 if Sys.islinux() && FracOfAvailMemory<1
 	println("Low system RAM detected:\n     Switching to low memory mode")
 	UseLowMemoryMode=true
+	println("")
 end
 
 WhiteListFile=joinpath(".","WhiteList.csv");# Import Gridcoin WhiteList from CSV file
