@@ -213,7 +213,7 @@ Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in 
 				#Switching from LocFileStream/PareDownIO to run(bash -c "wget | catz | grep -E") can greatly reduce RAM usage (Linux only)
 				if UseLowMemoryMode	
 					locURL=row.URL
-					run(`bash -c "./src/lowMemDownload.sh $locURL $LocTemp"`)
+					run(`bash -c "bash ./src/lowMemDownload.sh $locURL $LocTemp"`)
 				else
 					LocFileStream = GzipDecompressorStream( IOBuffer(HTTP.get(row.URL).body)) #Download & Decompress xml
 					PareDownIO( LocFileStream,LocTemp)	#Remove most unnecessary elements from XML to save RAM
