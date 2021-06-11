@@ -116,6 +116,15 @@ end
 ### Start Main run
 ###
 
+# Check if we should use LowMemoryMode (for Rasbery PI and other linux based SBCs)
+#		Reduces download speed slightly but drops memory usage to <1GB
+FracOfAvailMemory = Sys.total_memory() / 1024^3 / 5.75;
+UseLowMemoryMode = false
+if Sys.islinux() && FracOfAvailMemory<1
+	println("Low system RAM detected:\n     Switching to low memory mode")
+	UseLowMemoryMode=true
+end
+
 WhiteListFile=joinpath(".","WhiteList.csv");# Import Gridcoin WhiteList from CSV file
 println("Reading $WhiteListFile")
 WhiteListTable=loadtable(WhiteListFile);
@@ -185,12 +194,11 @@ for line in GreyList
 	println("    Project on greylist: $(WhiteListTable[line].FullName)")
 end
 println("")
-save(WhiteListTable,joinpath(".","HostFiles","WhiteList.jldb")) #Save checked and parsed WhiteListTable for quicker access
-
 
 
 println("Downloading Host Data")
 
+FailedDownloads=[];
 
 Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads) 
 		row=WhiteListTable[ind];
@@ -201,10 +209,14 @@ Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in 
 			LocTemp=joinpath(tempdir(),"QM_Temp","$(row.Type)"*"_"*"$(row.Project).xml") #Path to temp XML file
 			
 			try
-				#Switching from LocFileStream/PareDownIO to run(wget | catz | grep -E) would reduce RAM usage. (Linux only)
-				LocFileStream = GzipDecompressorStream( IOBuffer(HTTP.get(row.URL).body)) #Download & Decompress xml
-				PareDownIO( LocFileStream,LocTemp)		#Remove most unnecessary elements from XML to save RAM
-				
+				#Switching from LocFileStream/PareDownIO to run(bash -c "wget | catz | grep -E") can greatly reduce RAM usage (Linux only)
+				if UseLowMemoryMode	
+					locURL=row.URL
+					run(`bash -c "./src/lowMemDownload.sh $locURL $LocTemp"`)
+				else
+					LocFileStream = GzipDecompressorStream( IOBuffer(HTTP.get(row.URL).body)) #Download & Decompress xml
+					PareDownIO( LocFileStream,LocTemp)	#Remove most unnecessary elements from XML to save RAM
+				end
 				
 				MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
 
@@ -218,10 +230,21 @@ Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in 
 				println("    Finished downloading project: $(row.Project)")
 			catch e					#catch errors that occur if a project website is down
 				println("Error: Unable to download data for $(row.Project)")
+				push!(FailedDownloads,ind)
 			end
 		end
 	   
 end 
+
+# Finalize WhiteListTable.jldb noting missing data (Host data & Team data from block explorer)
+TeamRacVect=select(WhiteListTable,:TeamRAC);
+for jnd in FailedDownloads
+	TeamRacVect[jnd] = Inf ;	
+end
+WhiteListTable=JuliaDB.popcol(WhiteListTable, :TeamRAC)
+WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, TeamRacVect)
+save(WhiteListTable,joinpath(".","HostFiles","WhiteList.jldb")) #Save checked and parsed WhiteListTable for quicker access
+
 
 #Clean up temp directory
 if Sys.iswindows()
