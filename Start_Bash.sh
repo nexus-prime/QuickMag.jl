@@ -1,11 +1,15 @@
 #! /bin/bash
 
-JuliaPath=$(which julia)
+
 CPUthreads=$(nproc)
-if [ -z "$JuliaPath" ]
+FreeRAM=$(free -b | grep Mem | grep -Eo [0-9]* | head -n 3 | tail -n 1)
+lowMemoryOpt=$(julia -E "($FreeRAM/ 1024^3 / 5.75)<1")
+
+if "$lowMemoryOpt" == "true"
 then
-	echo "Julia not found. Install current stable release:  https://julialang.org/downloads/"
+	export JULIA_NUM_THREADS=2
+	julia "./Run_QuickMag.jl"
 else
 	export JULIA_NUM_THREADS=$CPUthreads
-	$JuliaPath "./Run_QuickMag.jl"
+	julia "./Run_QuickMag.jl"
 fi
