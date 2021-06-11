@@ -8,7 +8,7 @@ The code here will eventually replace the backend code for http://quickmag.ml/
 **Requires:**
 
     *Julia (version 1.5 or later): https://julialang.org/downloads/ 
-    *5GB RAM (3GB for Linux SBCs)
+    *5GB RAM (1.5 GB for Linux SBCs)
     *600MB disk space ( ~25 MB for the database and ~550MB for Julia + dependencies)
 
 
