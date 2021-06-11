@@ -213,7 +213,7 @@ if UseLowMemoryMode
 				try
 					#Switching from LocFileStream/PareDownIO to run(bash -c "wget | catz | grep -E") can greatly reduce RAM usage (Linux only)
 					locURL=row.URL
-					run(`bash -c "./src/lowMemDownload.sh $locURL $LocTemp"`)
+					run(`bash -c "bash ./src/lowMemDownload.sh $locURL $LocTemp"`)
 
 					
 					MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
