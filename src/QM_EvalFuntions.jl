@@ -161,7 +161,7 @@ function QuickMagGPU(CoProcID,NumResults)
 			MagFrame[ind]=[ ]
 		end
 	end	
-	ProjectFrame=select(filter(x-> x.Type=="cpu",WhiteListTable),:FullName)
+	ProjectFrame=select(filter(x-> x.Type=="gpu",WhiteListTable),:FullName)
 	
 	printstyled(string(lpad("Project Name|",21),"\t", "Top $NumResults magnitude(s) for $CoProcID\n"),bold=:true)
 	for ind=1:OutLength
