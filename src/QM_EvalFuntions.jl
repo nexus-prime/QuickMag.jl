@@ -19,7 +19,7 @@ function QuickMagCPU(ProcID,NumResults)
 			shortTab=sort(filter(host -> occursin(ProcID,string(host.CPUmodel)), LocHostTable), :RAC, rev=true);
 			#Get magnitude values for #NumResults best systems
 			if isempty(select(shortTab,:ID))
-				MagFrame[ind]=[ ]
+				MagFrame[ind]=[ 0.0 ]
 			else
 				if size(select(shortTab,:ID),1)<NumResults
 					readNum=size(select(shortTab,:ID),1);
@@ -35,7 +35,7 @@ function QuickMagCPU(ProcID,NumResults)
 			MagFrame[ind]=[ ]
 		end
 	end
-	ProjectFrame=select(filter(x-> x.Type=="cpu",WhiteListTable),:FullName)
+	ProjectFrame=select( filter(x-> x.Type=="cpu",WhiteListTable),:FullName)
 	
 	printstyled(string(lpad("Project Name|",21),"\t", "Top $NumResults magnitude(s) for $ProcID\n"),bold=:true)
 	for ind=1:OutLength
@@ -126,6 +126,7 @@ function QuickMagGPU(CoProcID,NumResults)
 	MagFrame=[[] for ind=1:OutLength]	
 	for ind=1:OutLength
 		row=WhiteListTable[LocProjKey[ind]];
+		
 		if (row.TeamRAC!=Inf)	
 			LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb")
 			LocHostTable=load(LocFilePath)
@@ -133,19 +134,20 @@ function QuickMagGPU(CoProcID,NumResults)
 			shortTab=sort(filter(host -> occursin(CoProcID,string(host.GPUmodel)), LocHostTable), :RAC, rev=true);
 			#Remove Multi GPU systems
 			if GPUtype=="CUDA"
+				println("CUDA")
 				shortTab=filter(host -> ~occursin("CAL",string(host.GPUmodel)), shortTab)
-				shortTab=filter(host -> occursin("|1|",split(string(host.GPUmodel),']')[1]), shortTab)
+				shortTab=filter(host -> occursin("|1|",split(string(host.GPUmodel),']')[findfirst(x->occursin("CUDA",x),split(host.GPUmodel,']'))]), shortTab)
 			elseif GPUtype=="CAL"
 				shortTab=filter(host -> ~occursin("CUDA",string(host.GPUmodel)), shortTab)
-				shortTab=filter(host -> occursin("|1|",split(string(host.GPUmodel),']')[1]), shortTab)
+				shortTab=filter(host -> occursin("|1|",split(string(host.GPUmodel),']')[findfirst(x->occursin("CAL",x),split(host.GPUmodel,']'))]), shortTab)
 			else
 				shortTab=filter(host -> ~occursin("CAL",string(host.GPUmodel)), shortTab)
 				shortTab=filter(host -> ~occursin("CUDA",string(host.GPUmodel)), shortTab)
-				shortTab=filter(host -> occursin("|1|",split(string(host.GPUmodel),']')[1]), shortTab)
+				shortTab=filter(host -> occursin("|1|",split(string(host.GPUmodel),']')[findfirst(x->occursin("INTEL",x),split(host.GPUmodel,']'))]), shortTab)
 			end
 			
 			if isempty(select(shortTab,:ID))
-				MagFrame[ind]=[ ]
+				MagFrame[ind]=[ 0.0 ]
 			else
 				if size(select(shortTab,:ID),1)<NumResults
 					readNum=size(select(shortTab,:ID),1);
@@ -171,7 +173,3 @@ function QuickMagGPU(CoProcID,NumResults)
 	end
 
 end
-
-
-
-
