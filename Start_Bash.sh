@@ -1,15 +1,11 @@
 #! /bin/bash
 
-
-CPUthreads=$(nproc)
-FreeRAM=$(free -b | grep Mem | grep -Eo [0-9]* | head -n 3 | tail -n 1)
-lowMemoryOpt=$(julia -E "($FreeRAM/ 1024^3 / 5.75)<1")
-
-if "$lowMemoryOpt" == "true"
+CPUthreads=$(nproc)		#Detect number of available CPU threads
+if ! command -v julia &> /dev/null	#Check if Julia is installed
 then
-	export JULIA_NUM_THREADS=2
-	julia "./Run_QuickMag.jl"
+	echo "Julia not found"
+	echo "Add to Julia to path or install the current stable release from:  https://julialang.org/downloads/"
 else
-	export JULIA_NUM_THREADS=$CPUthreads
-	julia "./Run_QuickMag.jl"
+	export JULIA_NUM_THREADS=$CPUthreads	#Set enviroment variable to tell Julia how many threads to use
+	julia "./Run_QuickMag.jl"				#Start QuickMag CLI
 fi
