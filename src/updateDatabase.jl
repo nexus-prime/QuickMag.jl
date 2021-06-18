@@ -10,20 +10,21 @@ using Cascadia
 using Dates
 
 #Functions
-function PareDownIO(MyIOSTREAM,WriteLocation) #Reduce Size of XML Files (keep RAM usage as small as possible)
-LocF=open(WriteLocation, "w");
+function PareDownIO(MyIOSTREAM) #Reduce Size of XML Files (keep RAM usage as small as possible)
+ParedIO=IOBuffer(append=true);
+
 	for LocLine in eachline(MyIOSTREAM)
 		if occursin("credit",LocLine) || occursin("id",LocLine) || occursin("model",LocLine) || occursin("host",LocLine) || occursin("coproc",LocLine) || occursin("xml",LocLine)
-			write(LocF, string(LocLine,"\n"));
-			#println(LocLine)
+			println(ParedIO, string(LocLine));
 		end
 	end
-close(LocF)
+
+return ParedIO
 end
 
 function MyStreamXMLparse(XMLstream,OutFile) #Read XML files line by line and extract desired values (avoids memory leak from libXML2)
-reader = open(EzXML.StreamReader, XMLstream)
-	
+reader = EzXML.StreamReader(XMLstream)
+	#println("Loaded Reader")
 	#Arrays to accumulate needed data
 	LocHostID = [];
 	LocTotCred = [];
@@ -59,7 +60,7 @@ reader = open(EzXML.StreamReader, XMLstream)
 			foundTotCred=false
 			foundRAC=false
 			foundPModel=false
-			foundGModel=false		
+			foundGModel=false			
 		end
 		#Locate which data type we found and save value
 		if (reader.type==1) && (reader.name=="id") # Type=1 is an element/node
@@ -75,6 +76,7 @@ reader = open(EzXML.StreamReader, XMLstream)
 			foundRAC=true
 		end
 		if (reader.type==1) && (reader.name=="p_model") # Type=1 is an element/node
+			#println(string(reader.content))
 			push!(LocPModel,uppercase(string(reader.content)))
 			foundPModel=true
 		end
@@ -116,15 +118,6 @@ end
 ### Start Main run
 ###
 
-# Check if we should use LowMemoryMode (for Rasbery PI and other linux based SBCs)
-#		Reduces download speed slightly but drops memory usage to <1GB
-FracOfAvailMemory = Sys.total_memory() / 1024^3 / 5.75;
-UseLowMemoryMode = false
-if Sys.islinux() && FracOfAvailMemory<1
-	println("Low system RAM detected:\n     Switching to low memory mode")
-	UseLowMemoryMode=true
-end
-
 WhiteListFile=joinpath(".","WhiteList.csv");# Import Gridcoin WhiteList from CSV file
 println("Reading $WhiteListFile")
 WhiteListTable=loadtable(WhiteListFile);
@@ -140,23 +133,12 @@ if isdir(FullHostFilePath)
 		rm("HostFiles"; force=true, recursive=true);
 	end
 end
-mkdir("HostFiles")							#Make new folder to store host data
-
-#Clean up any leftover data in temp directory
-TempPath=joinpath(tempdir(),"QM_Temp")		#Save path to working temp directory 
-if isdir(TempPath)
-	if Sys.iswindows()
-		run(`cmd /C rmdir /Q /S $TempPath`)			#Windows File Permisions issue (workaround)
-	else
-		rm(TempPath; force=true, recursive=true);
-	end
-end
-mkdir(TempPath)
+mkdir("HostFiles")					#Make new folder to store host data
 
 
 #Check with block explorer to verify greylist/TeamRAC
 statsURL="https://www.gridcoinstats.eu/project";
-statsHTML=joinpath(tempdir(),"QM_Temp","stats.html")
+statsHTML=joinpath(tempdir(),"stats.html")
 
 if Sys.iswindows()
 	run(`cmd /C curl $statsURL -s -o $statsHTML`)
@@ -184,6 +166,7 @@ for lineNum = 2:TableLines
 	end
 	
 end
+
 rm(statsHTML);
 
 WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, WLTab_RACvect)
@@ -198,72 +181,38 @@ println("")
 
 println("Downloading Host Data")
 
-FailedDownloads=[];
+FailedDownloads=[];		#Vector to keep track of any failed downloads
 
 
-if UseLowMemoryMode	
-	for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads) 
-			row=WhiteListTable[ind];
-			if (row.TeamRAC!=Inf)	
-				println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
-				
-				LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb") #Path to saved data
-				LocTemp=joinpath(tempdir(),"QM_Temp","$(row.Type)"*"_"*"$(row.Project).xml") #Path to temp XML file
-				
-				try
-					#Switching from LocFileStream/PareDownIO to run(bash -c "wget | catz | grep -E") can greatly reduce RAM usage (Linux only)
-					locURL=row.URL
-					run(`bash -c "bash ./src/lowMemDownload.sh $locURL $LocTemp"`)
-
-					
-					MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
-
-					#Remove temp XML file
-					if Sys.iswindows()
-						#run(`cmd /C del $LocTemp`) #Windows File Permisions issue
-					else
-						rm(LocTemp);
-					end				
-
-					println("    Finished downloading project: $(row.Project)")
-				catch e					#catch errors that occur if a project website is down
-					println("Error: Unable to download data for $(row.Project)")
-					push!(FailedDownloads,ind)
+Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads)
+		row=WhiteListTable[ind];
+		if (row.TeamRAC!=Inf)	#Skip if project if there was no current team data available
+			println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
+			
+			LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb") #Path to saved data
+			
+			try
+				#Alternate between downloading & processing host data
+				CompressedFileStream = Base.BufferStream();
+				@async while !eof(CompressedFileStream)
+					MyStreamXMLparse(PareDownIO(GzipDecompressorStream(CompressedFileStream)),LocFilePath) #Remove most unnecessary elements from XML to save RAM & Convert XML to binary JuliaDB file	
 				end
-			end
-	end 
-else
-	Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads) 
-			row=WhiteListTable[ind];
-			if (row.TeamRAC!=Inf)	
-				println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
 				
-				LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb") #Path to saved data
-				LocTemp=joinpath(tempdir(),"QM_Temp","$(row.Type)"*"_"*"$(row.Project).xml") #Path to temp XML file
+				#Download host data and send to CompressedFileStream
+				Request = HTTP.get(row.URL, response_stream=CompressedFileStream,verbose=0, connect_timeout=30, retries=3)
 				
-				try
-					#Downloading using Julia tools results in higher download speeds
-					LocFileStream = GzipDecompressorStream( IOBuffer(HTTP.get(row.URL).body)) #Download & Decompress xml
-					PareDownIO( LocFileStream,LocTemp)	#Remove most unnecessary elements from XML to save RAM
+				#Wait until there is no data left in CompressedFileStream
+				close(CompressedFileStream)
+				println("    Finished downloading project: $(row.Project)")
 
-					
-					MyStreamXMLparse(LocTemp,LocFilePath)	#Convert XML to binary JuliaDB file
-
-					#Remove temp XML file
-					if Sys.iswindows()
-						#run(`cmd /C del $LocTemp`) #Windows File Permisions issue
-					else
-						rm(LocTemp);
-					end				
-
-					println("    Finished downloading project: $(row.Project)")
-				catch e					#catch errors that occur if a project website is down
-					println("Error: Unable to download data for $(row.Project)")
-					push!(FailedDownloads,ind)
-				end
+			catch e					#catch errors that occur if a project website is down
+				println("Error: Unable to download data for $(row.Project)")
+				push!(FailedDownloads,ind)
 			end
-	end 
-end
+			
+		end
+end 
+
 
 
 # Finalize WhiteListTable.jldb noting missing data (Host data & Team data from block explorer)
@@ -275,10 +224,3 @@ WhiteListTable=JuliaDB.popcol(WhiteListTable, :TeamRAC)
 WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, TeamRacVect)
 save(WhiteListTable,joinpath(".","HostFiles","WhiteList.jldb")) #Save checked and parsed WhiteListTable for quicker access
 
-
-#Clean up temp directory
-if Sys.iswindows()
-	#run(`cmd /C rmdir /Q /S $TempPath`) #Windows File Permisions issue
-else
-	rm(TempPath; force=true, recursive=true);
-end
