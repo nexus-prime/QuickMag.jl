@@ -11,15 +11,16 @@ using Dates
 
 #Functions
 function PareDownIO(MyIOSTREAM) #Reduce Size of XML Files (keep RAM usage as small as possible)
-ParedIO=IOBuffer(append=true);
+	ParedIO=IOBuffer(append=true);
 
-	for LocLine in eachline(MyIOSTREAM)
-		if occursin("credit",LocLine) || occursin("id",LocLine) || occursin("model",LocLine) || occursin("host",LocLine) || occursin("coproc",LocLine) || occursin("xml",LocLine)
-			println(ParedIO, string(LocLine));
+		for LocLine in eachline(MyIOSTREAM)
+			if occursin("credit",LocLine) || occursin("id",LocLine) || occursin("model",LocLine) || occursin("host",LocLine) || occursin("coproc",LocLine) || occursin("xml",LocLine)
+				println(ParedIO, string(LocLine));
+			end
 		end
-	end
 
-return ParedIO
+	return ParedIO
+	close(ParedIO)
 end
 
 function MyStreamXMLparse(XMLstream,OutFile) #Read XML files line by line and extract desired values (avoids memory leak from libXML2)
