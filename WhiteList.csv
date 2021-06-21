@@ -1,5 +1,6 @@
 Project,FullName,Type,URL
 wcg,World Community Grid,cpu,https://download.worldcommunitygrid.org/boinc/stats/host.gz
+rosetta,Rosetta@home,cpu,http://boinc.bakerlab.org/rosetta/stats/host.gz
 odlk1,Odlk1,cpu,https://boinc.multi-pool.info/latinsquares/stats/host.gz
 yafu,YAFU,cpu,http://yafu.myfirewall.org/yafu/stats/host.gz
 tngrid,Tn-grid,cpu,http://gene.disi.unitn.it/test/stats/host.gz
@@ -8,7 +9,6 @@ nfs,Nfs@home,cpu,https://escatter11.fullerton.edu/nfs/stats/host.gz
 universe,Universe@home,cpu,https://universeathome.pl/universe/stats/host.gz
 cosmology,Cosmology@home,cpu,http://cosmologyathome.org/stats/host.gz
 lhc,LHC@Home,cpu,https://lhcathome.cern.ch/lhcathome/stats/host.gz
-rosetta,Rosetta@home,cpu,http://boinc.bakerlab.org/rosetta/stats/host.gz
 yoyo,Yoyo@home,cpu,http://www.rechenkraft.net/yoyo/stats/host.gz
 amicable,Amicable Numbers,gpu,https://sech.me/boinc/Amicable/stats/host.gz
 collatz,Collatz Conjecture,gpu,http://boinc.thesonntags.com/collatz/stats/host.gz
