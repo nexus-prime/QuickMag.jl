@@ -7,9 +7,9 @@ then
 else
 	FreeRAM=$(free -b | grep Mem | grep -Eo [0-9]* | head -n 3 | tail -n 1)
 	lowMemoryOpt=$(julia -E "($FreeRAM/ 1024^3 / 4.1)<1")
-	if "$lowMemoryOpt" == "true"				#Use reduced threads if on low memory device
+	if "$lowMemoryOpt" == "true"				#Detect amount of memory available
 	then
-		export JULIA_NUM_THREADS=$(julia -E round\(Int,$(nproc)/2\) )	#Detect amount of memory available
+		export JULIA_NUM_THREADS=$(julia -E round\(Int,$(nproc)/2\) )	#Use reduced threads if on low memory device
 	else
 		export JULIA_NUM_THREADS=$(nproc)	#Set enviroment variable to tell Julia how many threads to use
 	fi	
