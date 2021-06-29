@@ -10,6 +10,7 @@ universe,Universe@home,cpu,https://universeathome.pl/universe/stats/host.gz
 cosmology,Cosmology@home,cpu,http://cosmologyathome.org/stats/host.gz
 lhc,LHC@Home,cpu,https://lhcathome.cern.ch/lhcathome/stats/host.gz
 yoyo,Yoyo@home,cpu,http://www.rechenkraft.net/yoyo/stats/host.gz
+sidock,Sidock@home,cpu,https://www.sidock.si/sidock/stats/host.gz
 amicable,Amicable Numbers,gpu,https://sech.me/boinc/Amicable/stats/host.gz
 collatz,Collatz Conjecture,gpu,http://boinc.thesonntags.com/collatz/stats/host.gz
 milkyway,Milkyway@home,gpu,http://milkyway.cs.rpi.edu/milkyway/stats/host.gz
