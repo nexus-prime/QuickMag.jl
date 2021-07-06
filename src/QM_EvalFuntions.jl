@@ -134,7 +134,6 @@ function QuickMagGPU(CoProcID,NumResults)
 			shortTab=sort(filter(host -> occursin(CoProcID,string(host.GPUmodel)), LocHostTable), :RAC, rev=true);
 			#Remove Multi GPU systems
 			if GPUtype=="CUDA"
-				println("CUDA")
 				shortTab=filter(host -> ~occursin("CAL",string(host.GPUmodel)), shortTab)
 				shortTab=filter(host -> occursin("|1|",split(string(host.GPUmodel),']')[findfirst(x->occursin("CUDA",x),split(host.GPUmodel,']'))]), shortTab)
 			elseif GPUtype=="CAL"
