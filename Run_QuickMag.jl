@@ -44,7 +44,7 @@ else											#Force update if there is no database files
 	include(joinpath(".","src","updateDatabase.jl"))
 	println()
 end
-include(joinpath(".","src","QM_EvalFuntions.jl"))
+include(joinpath(".","src","QM_EvalFunctions.jl"))
 
 printstyled("QuickMag is ready:\n",bold=:true)
 
