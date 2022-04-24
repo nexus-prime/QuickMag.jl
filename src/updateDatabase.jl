@@ -1,13 +1,15 @@
 #!/usr/bin/env julia
 
 #Dependencies
-using JuliaDB
+#using JuliaDB
 using HTTP
 using CodecZlib
 using EzXML
 using Gumbo
 using Cascadia
 using Dates
+using DataFrames
+using CSV
 
 #Functions
 function PareDownIO(MyIOSTREAM) #Reduce Size of XML Files (keep RAM usage as small as possible)
@@ -97,7 +99,7 @@ reader = EzXML.StreamReader(XMLstream)
 		push!(LocRAC,"0")
 	end			
 	if foundPModel==false
-		push!(LocPModel,"NONE")
+		push!(LocPModel,"NOTHING")
 	end		
 	if foundGModel==false
 		push!(LocGModel,"NONE")
@@ -106,10 +108,14 @@ reader = EzXML.StreamReader(XMLstream)
 	LocHostID=parse.([Int64],LocHostID)
 	LocTotCred=parse.([Float64],LocTotCred)
 	LocRAC=parse.([Float64],LocRAC)
-
-	LocalTable=table(LocHostID,LocPModel,LocGModel,LocTotCred,LocRAC; names = [:ID, :CPUmodel, :GPUmodel, :TotCred, :RAC]);
+	LocPModel=string.(LocPModel)
+	LocGModel=string.(LocGModel)
+	
+	#LocalTable=table(LocHostID,LocPModel,LocGModel,LocTotCred,LocRAC; names = [:ID, :CPUmodel, :GPUmodel, :TotCred, :RAC]);
+	LocalTable=DataFrame(ID=LocHostID,CPUmodel=LocPModel,GPUmodel=LocGModel,TotCred=LocTotCred,RAC=LocRAC)
+	
 	LocalTable=filter(host -> host.RAC > 1.0 , LocalTable)		#Remove any inactive hosts from database
-	save(LocalTable,OutFile)
+	CSV.write(OutFile,LocalTable)
 	
 
 end
@@ -121,9 +127,8 @@ end
 
 WhiteListFile=joinpath(".","WhiteList.csv");# Import Gridcoin WhiteList from CSV file
 println("Reading $WhiteListFile")
-WhiteListTable=loadtable(WhiteListFile);
-WLlength=size(select(WhiteListTable,1),1);
-
+WhiteListTable=DataFrame(CSV.File(WhiteListFile));
+WLlength=size(WhiteListTable,1);
 
 #Remove old host data
 FullHostFilePath=joinpath(pwd(),"HostFiles");
@@ -135,7 +140,6 @@ if isdir(FullHostFilePath)
 	end
 end
 mkdir("HostFiles")					#Make new folder to store host data
-
 
 #Check with block explorer to verify greylist/TeamRAC
 statsURL="https://www.gridcoinstats.eu/project";
@@ -156,7 +160,7 @@ for lineNum = 2:TableLines
 	line=HTMLtab[lineNum];
 	ProjName=string(line[1][1][1]);
 	TeamRAC=parse(Int64,replace(string(line[7][1][1]),' ' => ""));
-	locIndex=findall(x-> x==ProjName, select(WhiteListTable,:FullName));
+	locIndex=findall(x-> x==ProjName, WhiteListTable."FullName");
 	
 	if ~isempty(locIndex)
 		WLTab_RACvect[locIndex[1]]=TeamRAC;
@@ -170,12 +174,17 @@ end
 
 rm(statsHTML);
 
-WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, WLTab_RACvect)
-WhiteListTable=JuliaDB.pushcol(WhiteListTable, :NumWL_Proj, [CurrentWLsize for ind=1:WLlength]);
-WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TimeStamp, [Dates.now() for ind=1:WLlength]);
-GreyList=findall(x-> x==Inf,select(WhiteListTable,:TeamRAC))	#Print notice if projects are on greylist
+
+##########################
+#WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, WLTab_RACvect)
+WhiteListTable."TeamRAC"=WLTab_RACvect;
+#WhiteListTable=JuliaDB.pushcol(WhiteListTable, :NumWL_Proj, [CurrentWLsize for ind=1:WLlength]);
+WhiteListTable."NumWL_Proj"=[CurrentWLsize for ind=1:WLlength];
+#WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TimeStamp, [Dates.now() for ind=1:WLlength]);
+WhiteListTable."TimeStamp"=[Dates.now() for ind=1:WLlength];
+GreyList=findall(x-> x==Inf, WhiteListTable."TeamRAC")	#Print notice if projects are on greylist
 for line in GreyList
-	println("    Project on greylist: $(WhiteListTable[line].FullName)")
+	println("    Project on greylist: $(WhiteListTable.FullName[line])")
 end
 println("")
 
@@ -186,11 +195,11 @@ FailedDownloads=[];		#Vector to keep track of any failed downloads
 
 
 Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads)
-		row=WhiteListTable[ind];
-		if (row.TeamRAC!=Inf)	#Skip if project if there was no current team data available
+		row=WhiteListTable[ind,:];
+		if (row."TeamRAC"!=Inf)	#Skip if project if there was no current team data available
 			println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
 			
-			LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).jldb") #Path to saved data
+			LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).csv") #Path to saved data
 			
 			try
 				#Alternate between downloading & processing host data
@@ -216,12 +225,11 @@ end
 
 
 
-# Finalize WhiteListTable.jldb noting missing data (Host data & Team data from block explorer)
-TeamRacVect=select(WhiteListTable,:TeamRAC);
+# Finalize WhiteListData.csv noting missing data (Host data & Team data from block explorer)
+TeamRacVect=WhiteListTable."TeamRAC";
 for jnd in FailedDownloads
 	TeamRacVect[jnd] = Inf ;	
 end
-WhiteListTable=JuliaDB.popcol(WhiteListTable, :TeamRAC)
-WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, TeamRacVect)
-save(WhiteListTable,joinpath(".","HostFiles","WhiteList.jldb")) #Save checked and parsed WhiteListTable for quicker access
+WhiteListTable."TeamRAC"=TeamRacVect;
 
+CSV.write(joinpath(".","HostFiles","WhiteListData.csv"),WhiteListTable) #Save checked and parsed WhiteListTable 
