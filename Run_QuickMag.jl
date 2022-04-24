@@ -7,17 +7,22 @@ printstyled("Updating dependencies...\n",bold=:true)
 include(joinpath(".","src","updateDependencies.jl"))
 println()
 
-using JuliaDB
+using HTTP
+using CodecZlib
+using EzXML
+using Gumbo
+using Cascadia
 using Dates
+using DataFrames
+using CSV
 using REPL.TerminalMenus
 
-
 printstyled("Checking database status...\n",bold=:true)
-ExistingDatabase=isfile(joinpath(".","HostFiles","WhiteList.jldb"));
+ExistingDatabase=isfile(joinpath(".","HostFiles","WhiteListData.csv"));
 if ExistingDatabase
 	CurrentTime=Dates.now()
-	WhiteListTable=WhiteListTable=load(joinpath(".","HostFiles","WhiteList.jldb"));
-	UpdateTime=WhiteListTable[1].TimeStamp		
+	WhiteListTable=WhiteListTable=DataFrame(CSV.File(joinpath(".","HostFiles","WhiteListData.csv")));
+	UpdateTime=WhiteListTable.TimeStamp[1]		
 	DayFrac=round(Millisecond(CurrentTime-UpdateTime)/Millisecond(Day(1)),digits=2); #Get number of days since last update
 	if DayFrac<1.0
 		printstyled("Database has recently been updated\n")			#Skip option to update if less than 24 hours
