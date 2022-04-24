@@ -44,7 +44,7 @@ if ExistingDatabase
 		
 	end
 	
-else											#Force update if there is no database files
+else											#Force update if there is are no database files found
 	printstyled("No database found. Building new database of BOINC hosts:\n",bold=:true)
 	include(joinpath(".","src","updateDatabase.jl"))
 	println()
