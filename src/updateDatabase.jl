@@ -176,7 +176,6 @@ rm(statsHTML);
 
 
 ##########################
-#WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, WLTab_RACvect)
 WhiteListTable."TeamRAC"=WLTab_RACvect;
 WhiteListTable."NumWL_Proj"=[CurrentWLsize for ind=1:WLlength];
 WhiteListTable."TimeStamp"=[Dates.now() for ind=1:WLlength];
