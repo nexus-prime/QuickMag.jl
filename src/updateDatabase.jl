@@ -178,9 +178,7 @@ rm(statsHTML);
 ##########################
 #WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TeamRAC, WLTab_RACvect)
 WhiteListTable."TeamRAC"=WLTab_RACvect;
-#WhiteListTable=JuliaDB.pushcol(WhiteListTable, :NumWL_Proj, [CurrentWLsize for ind=1:WLlength]);
 WhiteListTable."NumWL_Proj"=[CurrentWLsize for ind=1:WLlength];
-#WhiteListTable=JuliaDB.pushcol(WhiteListTable, :TimeStamp, [Dates.now() for ind=1:WLlength]);
 WhiteListTable."TimeStamp"=[Dates.now() for ind=1:WLlength];
 GreyList=findall(x-> x==Inf, WhiteListTable."TeamRAC")	#Print notice if projects are on greylist
 for line in GreyList
