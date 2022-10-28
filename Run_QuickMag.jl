@@ -24,8 +24,8 @@ if ExistingDatabase
 	WhiteListTable=WhiteListTable=DataFrame(CSV.File(joinpath(".","HostFiles","WhiteListData.csv")));
 	UpdateTime=WhiteListTable.TimeStamp[1]		
 	DayFrac=round(Millisecond(CurrentTime-UpdateTime)/Millisecond(Day(1)),digits=2); #Get number of days since last update
-	if DayFrac<1.0
-		printstyled("Database has recently been updated\n")			#Skip option to update if less than 24 hours
+	if DayFrac<0.95
+		printstyled("Database has recently been updated\n")			#Skip option to update if less than 23 hours
 		println()
 	else
 		printstyled("Database last updated $DayFrac days ago\n")		#Offer update if >24 hours and databases exist
