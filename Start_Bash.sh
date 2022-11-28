@@ -6,10 +6,10 @@ then
 	echo "Add to Julia to path or install the current stable release from:  https://julialang.org/downloads/"
 else
 	FreeRAM=$(free -b | grep Mem | grep -Eo [0-9]* | head -n 3 | tail -n 1)
-	lowMemoryOpt=$(julia -E "($FreeRAM/ 1024^3 / 4.1)<1")
+	lowMemoryOpt=$(julia -E "($FreeRAM/ 1024^3 / 8.1)<1")
 	if "$lowMemoryOpt" == "true"				#Detect amount of memory available
 	then
-		export JULIA_NUM_THREADS=$(julia -E round\(Int,$(nproc)/2\) )	#Use reduced threads if on low memory device
+		export JULIA_NUM_THREADS=$(julia -E round\(Int,$(nproc)/4\) )	#Use reduced threads if on low memory device
 	else
 		export JULIA_NUM_THREADS=$(nproc)	#Set enviroment variable to tell Julia how many threads to use
 	fi	
