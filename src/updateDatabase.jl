@@ -10,6 +10,8 @@ using Cascadia
 using Dates
 using DataFrames
 using CSV
+using Terming
+using PrettyTables
 
 #Functions
 function PareDownIO(MyIOSTREAM) #Reduce Size of XML Files (keep RAM usage as small as possible)
@@ -121,6 +123,17 @@ reader = EzXML.StreamReader(XMLstream)
 end
 
 
+function redispStatusDF(statusDF,WLlength,printLock)
+	numLines=4+WLlength	
+	lock(printLock)
+	try
+		Terming.cmove_up(numLines)
+		pretty_table(statusDF;alignment=:l, nosubheader=true)	
+	finally
+		unlock(printLock)
+	end
+end
+
 ###
 ### Start Main run
 ###
@@ -188,36 +201,49 @@ println("")
 
 println("Downloading Host Data")
 
+global statusDF=DataFrame(Project=WhiteListTable."Project",Status=repeat(rpad.(["waiting..."],11," "),outer=WLlength))
+pretty_table(statusDF;alignment=:l, nosubheader=true)
 FailedDownloads=[];		#Vector to keep track of any failed downloads
+printLock=ReentrantLock()
 
-
-Threads.@threads for ind=1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads)
+Threads.@threads for ind in 1:WLlength	#Process projects in WhiteList.csv (Runs in parallel if julia started with multiple threads)
 		row=WhiteListTable[ind,:];
-		if (row."TeamRAC"!=Inf)	#Skip if project if there was no current team data available
-			println("    Starting to download project: $(row.Project), $(row.Type), $(row.URL)")
-			
-			LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).csv") #Path to saved data
-			
-			try
-				#Alternate between downloading & processing host data
-				CompressedFileStream = Base.BufferStream();
-				@async while !eof(CompressedFileStream)
-					MyStreamXMLparse(PareDownIO(GzipDecompressorStream(CompressedFileStream)),LocFilePath) #Remove most unnecessary elements from XML to save RAM & Convert XML to binary JuliaDB file	
+		sleep(rand())
+		statusDF[ind,2]="downloading"
+		redispStatusDF(statusDF,WLlength,printLock)			
+		
+			if (row."TeamRAC"!=Inf)	#Skip if project if there was no current team data available
+				
+				LocFilePath=joinpath(".","HostFiles","$(row.Type)"*"_"*"$(row.Project).csv") #Path to saved data
+				
+				try
+					#Alternate between downloading & processing host data
+					CompressedFileStream = Base.BufferStream();
+					@async while !eof(CompressedFileStream)
+						MyStreamXMLparse(PareDownIO(GzipDecompressorStream(CompressedFileStream)),LocFilePath) #Remove most unnecessary elements from XML to save RAM & Convert XML to binary JuliaDB file	
+					end
+					
+					#Download host data and send to CompressedFileStream
+					Request = HTTP.get(row.URL, response_stream=CompressedFileStream,verbose=0, connect_timeout=30, retries=3)
+					
+					#Wait until there is no data left in CompressedFileStream
+					close(CompressedFileStream)
+					statusDF[ind,2]="finished   "
+					redispStatusDF(statusDF,WLlength,printLock)
+
+				catch e					#catch errors that occur if a project website is down
+					statusDF[ind,2]="failed"
+					redispStatusDF(statusDF,WLlength,printLock)
+					push!(FailedDownloads,ind)
 				end
 				
-				#Download host data and send to CompressedFileStream
-				Request = HTTP.get(row.URL, response_stream=CompressedFileStream,verbose=0, connect_timeout=30, retries=3)
+			else
+				statusDF[ind,2]="unavailable"
+				redispStatusDF(statusDF,WLlength,printLock)
 				
-				#Wait until there is no data left in CompressedFileStream
-				close(CompressedFileStream)
-				println("    Finished downloading project: $(row.Project)")
-
-			catch e					#catch errors that occur if a project website is down
-				println("Error: Unable to download data for $(row.Project)")
-				push!(FailedDownloads,ind)
 			end
-			
-		end
+		redispStatusDF(statusDF,WLlength,printLock)
+
 end 
 
 
