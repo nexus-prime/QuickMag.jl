@@ -228,7 +228,7 @@ Threads.@threads for ind in 1:WLlength	#Process projects in WhiteList.csv (Runs 
 					
 					#Wait until there is no data left in CompressedFileStream
 					close(CompressedFileStream)
-					statusDF[ind,2]="finished"
+					statusDF[ind,2]="finished   "
 					redispStatusDF(statusDF,WLlength,printLock)
 
 				catch e					#catch errors that occur if a project website is down
