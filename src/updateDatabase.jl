@@ -201,7 +201,7 @@ println("")
 
 println("Downloading Host Data")
 
-global statusDF=DataFrame(Project=WhiteListTable."Project",Status=repeat(rpad.(["waiting..."],12," "),outer=WLlength))
+global statusDF=DataFrame(Project=WhiteListTable."Project",Status=repeat(rpad.(["waiting..."],11," "),outer=WLlength))
 pretty_table(statusDF;alignment=:l, nosubheader=true)
 FailedDownloads=[];		#Vector to keep track of any failed downloads
 printLock=ReentrantLock()
