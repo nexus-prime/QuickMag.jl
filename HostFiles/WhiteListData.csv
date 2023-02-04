@@ -1,0 +1,18 @@
+Project,FullName,Type,URL,TeamRAC,NumWL_Proj,TimeStamp
+wcg,World Community Grid,cpu,https://download.worldcommunitygrid.org/boinc/stats/host.gz,5.827243e6,15,2023-02-04T11:44:15.483
+universe,Universe@home,cpu,https://universeathome.pl/universe/stats/host.gz,2.6464904e7,15,2023-02-04T11:44:15.483
+lhc,LHC@Home,cpu,https://lhcathome.cern.ch/lhcathome/stats/host.gz,Inf,15,2023-02-04T11:44:15.483
+yoyo,Yoyo@home,cpu,http://www.rechenkraft.net/yoyo/stats/host.gz,7.065879e6,15,2023-02-04T11:44:15.483
+sidock,Sidock@home,cpu,https://www.sidock.si/sidock/stats/host.gz,2.067975e6,15,2023-02-04T11:44:15.483
+amicable,Amicable Numbers,gpu,https://sech.me/boinc/Amicable/stats/host.gz,1.20345301e8,15,2023-02-04T11:44:15.483
+milkyway,Milkyway@home,gpu,http://milkyway.cs.rpi.edu/milkyway/stats/host.gz,7.8288205e7,15,2023-02-04T11:44:15.483
+srbase,Srbase,gpu,http://srbase.my-firewall.org/sr5/stats/host.gz,7.7678885e7,15,2023-02-04T11:44:15.483
+gpug,Gpugrid,gpu,https://www.gpugrid.net/stats/host.gz,2.0809162e7,15,2023-02-04T11:44:15.483
+rosetta,Rosetta@home,cpu,http://boinc.bakerlab.org/rosetta/stats/host.gz,101081.0,15,2023-02-04T11:44:15.483
+odlk1,Odlk1,cpu,https://boinc.multi-pool.info/latinsquares/stats/host.gz,1.538893e6,15,2023-02-04T11:44:15.483
+yafu,YAFU,cpu,http://yafu.myfirewall.org/yafu/stats/host.gz,Inf,15,2023-02-04T11:44:15.483
+tngrid,Tn-grid,cpu,http://gene.disi.unitn.it/test/stats/host.gz,2.672892e6,15,2023-02-04T11:44:15.483
+numf,Numberfields@home,cpu,http://numberfields.asu.edu/NumberFields/stats/host.gz,2.1848659e7,15,2023-02-04T11:44:15.483
+nfs,Nfs@home,cpu,https://escatter11.fullerton.edu/nfs/stats/host.gz,4.736704e6,15,2023-02-04T11:44:15.483
+asteroids,Asteroids@home,gpu,http://asteroidsathome.net/boinc/stats/host.gz,1.566345e6,15,2023-02-04T11:44:15.483
+minecraft,Minecraft@home,gpu,https://minecraftathome.com/minecrafthome/stats/host.gz,Inf,15,2023-02-04T11:44:15.483
